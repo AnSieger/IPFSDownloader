@@ -80,6 +80,7 @@ jobs:
 
           $redistRoot = Join-Path $visualStudioPath 'VC\Redist\MSVC'
           $redistVersion = Get-ChildItem $redistRoot -Directory |
+            Where-Object { $_.Name -match '^\d+(\.\d+){2,3}$' } |
             Sort-Object { [version]$_.Name } -Descending |
             Select-Object -First 1
           if (-not $redistVersion) {
