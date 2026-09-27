@@ -37,7 +37,9 @@ Future<Widget> bootstrapApplication() async {
 Future<String> _defaultDownloadsDirectory() async {
   try {
     final directory = await getDownloadsDirectory();
-    if (directory != null) return _canonicalDirectoryPath(directory.path);
+    if (directory != null) {
+      return await _canonicalDirectoryPath(directory.path);
+    }
   } on UnsupportedError {
     // Fall through to a useful desktop fallback.
   }

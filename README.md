@@ -23,7 +23,9 @@
 </p>
 
 > [!IMPORTANT]
-> Prebuilt binaries are not published yet. IPFSDownloader can currently be run or packaged from source with Flutter.
+> Prebuilt packages for macOS, Windows, and Linux are available from the
+> [GitHub Releases page](https://github.com/AnSieger/IPFSDownloader/releases).
+> Release builds are currently unsigned and the macOS build is not notarized.
 
 ## Highlights
 
