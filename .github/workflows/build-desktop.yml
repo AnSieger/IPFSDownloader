@@ -60,6 +60,58 @@ jobs:
       - name: Build release bundle
         run: flutter build ${{ matrix.target }} --release
 
+      - name: Bundle Visual C++ runtime
+        if: matrix.target == 'windows'
+        shell: pwsh
+        run: |
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+          if (-not (Test-Path $vswhere)) {
+            throw "Could not find vswhere at $vswhere"
+          }
+
+          $visualStudioPath = & $vswhere `
+            -latest `
+            -products * `
+            -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
+            -property installationPath
+          if (-not $visualStudioPath) {
+            throw 'Could not find a Visual Studio installation with the C++ toolchain'
+          }
+
+          $redistRoot = Join-Path $visualStudioPath 'VC\Redist\MSVC'
+          $redistVersion = Get-ChildItem $redistRoot -Directory |
+            Sort-Object { [version]$_.Name } -Descending |
+            Select-Object -First 1
+          if (-not $redistVersion) {
+            throw "Could not find the Visual C++ redistributable files below $redistRoot"
+          }
+
+          $crtDirectory = Get-ChildItem (Join-Path $redistVersion.FullName 'x64') `
+            -Directory `
+            -Filter 'Microsoft.VC*.CRT' |
+            Select-Object -First 1
+          if (-not $crtDirectory) {
+            throw "Could not find the x64 Visual C++ runtime below $($redistVersion.FullName)"
+          }
+
+          $releaseDirectory = 'build/windows/x64/runner/Release'
+          if (-not (Test-Path $releaseDirectory -PathType Container)) {
+            throw "Could not find the Windows release bundle at $releaseDirectory"
+          }
+
+          $runtimeDlls = @(
+            'msvcp140.dll',
+            'vcruntime140.dll',
+            'vcruntime140_1.dll'
+          )
+          foreach ($runtimeDll in $runtimeDlls) {
+            $source = Join-Path $crtDirectory.FullName $runtimeDll
+            if (-not (Test-Path $source)) {
+              throw "Required Visual C++ runtime file is missing: $source"
+            }
+            Copy-Item $source $releaseDirectory
+          }
+
       - name: Package macOS application
         if: matrix.target == 'macos'
         run: >-
